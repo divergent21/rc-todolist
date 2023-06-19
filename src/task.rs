@@ -153,6 +153,22 @@ impl Task {
     fn update_time (&mut self) {
         self.updated_at = Utc::now();
     }
+
+    pub fn has_deadline (&self) -> bool {
+        self.deadline.is_some()
+    }
+
+    pub fn set_deadline (&mut self, deadline: DateTime<Utc>) {
+        self.deadline = Some(deadline);
+    }
+
+    pub fn is_for_today (&self) -> bool {
+        if !self.has_deadline() {
+            return false;
+        }
+
+        self.deadline.unwrap().signed_duration_since(Utc::now()).num_days() == 0
+    }
 }
 
 impl std::fmt::Display for Task {
@@ -163,6 +179,8 @@ impl std::fmt::Display for Task {
 
 #[cfg(test)]
 mod tests {
+    use chrono::{Days, Duration};
+
     use super::*;
 
     #[test]
@@ -279,5 +297,35 @@ mod tests {
         let mut task = Task::new("First", "").unwrap();
         task.set_priority(Priority::Red);
         assert_ne!(task.get_updated_at(), task.get_created_at());
+    }
+
+    #[test]
+    fn deadline_has_not_for_init () {
+        let task = Task::new("First", "").unwrap();
+        assert!(!task.has_deadline());
+    }
+
+    #[test]
+    fn deadline_has_deadline () {
+        let mut task = Task::new("First", "").unwrap();
+        task.set_deadline(Utc::now().checked_add_days(Days::new(2)).unwrap());
+
+        assert!(task.has_deadline());
+    }
+
+    #[test]
+    fn deadline_set_for_today () {
+        let mut task = Task::new("First", "").unwrap();
+        task.set_deadline(Utc::now().checked_add_signed(Duration::hours(2)).unwrap());
+
+        assert!(task.is_for_today());
+    }
+
+    #[test]
+    fn deadline_set_for_not_today () {
+        let mut task = Task::new("First", "").unwrap();
+        task.set_deadline(Utc::now().checked_add_days(Days::new(2)).unwrap());
+
+        assert!(! task.is_for_today());
     }
 }
