@@ -30,7 +30,9 @@ pub struct Task {
     priority: Priority,
 
     created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>
+    updated_at: DateTime<Utc>,
+
+    deadline: Option<DateTime<Utc>>
 }
 
 impl Task {
@@ -52,7 +54,8 @@ impl Task {
             tags: Vec::new(),
             priority: Priority::default(),
             created_at: Utc::now(),
-            updated_at: Utc::now()
+            updated_at: Utc::now(),
+            deadline: None
         })
     }
 
