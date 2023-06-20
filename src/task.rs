@@ -2,6 +2,7 @@ mod status;
 mod category;
 mod tag;
 mod priority;
+mod builder;
 
 pub use status::TaskStatus;
 pub use category::Category;
@@ -11,6 +12,8 @@ pub use priority::Priority;
 use uuid::Uuid;
 use chrono::prelude::*;
 use std::cmp::PartialEq;
+
+pub use builder::TaskBuilder;
 
 #[derive(PartialEq)]
 pub struct Task {
@@ -44,17 +47,14 @@ impl Task {
         Ok(title.trim().to_owned())
     }
 
-    pub fn new (title: &str, description: &str) -> Result<Self, &'static str> {
-        Ok(Self {
-            id: Uuid::new_v4(),
+    pub fn new (title: &str) -> Result<TaskBuilder, &'static str> {
+        Ok(TaskBuilder {
             title: Self::prepare_title(title)?,
-            description: description.to_owned(),
-            status: TaskStatus::default(),
-            category: Category::default(),
-            tags: Vec::new(),
-            priority: Priority::default(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            description: None,
+            status: None,
+            category: None,
+            tags: None,
+            priority: None,
             deadline: None
         })
     }
@@ -185,70 +185,71 @@ mod tests {
 
     #[test]
     fn create() {
-        let task = Task::new("First", "").unwrap();
+        let task = Task::new("First").unwrap().build();
         assert_eq!(task.get_title(), "First");
     }
 
     #[test]
     fn change_title () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_title("Second").unwrap();
         assert_eq!(task.get_title(), "Second");
     }
 
     #[test]
     fn failed_change_title_to_empty () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         assert!(task.set_title("").is_err());
         assert_eq!(task.get_title(), "First");
     }
 
     #[test]
     fn change_description () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_description("description ...");
         assert_eq!(task.get_description(), "description ...");
     }
 
     #[test]
     fn change_description_to_empty () {
-        let mut task = Task::new("First", "description ...").unwrap();
+        let mut task = Task::new("First").unwrap().description("description ...").build();
         task.set_description("");
         assert_eq!(task.get_description(), "");
     }
 
     #[test]
     fn change_status () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_status(TaskStatus::Archived);
         assert_eq!(task.get_status(), &TaskStatus::Archived);
     }
 
     #[test]
     fn change_category () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_category(Category::new("Important").unwrap());
         assert_eq!(task.get_category(), &Category::new("Important").unwrap());
     }
 
     #[test]
     fn set_tags () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_tags(vec![Tag::new("code").unwrap(), Tag::new("Rust").unwrap()]);
         assert_eq!(task.get_tags(), &vec![Tag::new("code").unwrap(), Tag::new("Rust").unwrap()]);
     }
 
     #[test]
     fn add_tag_to_empty () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.add_tag(Tag::new("Rust").unwrap()).unwrap();
         assert_eq!(task.get_tags(), &vec![Tag::new("Rust").unwrap()]);
     }
 
     #[test]
     fn add_tag () {
-        let mut task = Task::new("First", "").unwrap();
-        task.set_tags(vec![Tag::new("Rust").unwrap()]);
+        let mut task = Task::new("First").unwrap()
+                                .tags(&vec![Tag::new("Rust").unwrap()])
+                                .build();
 
         task.add_tag(Tag::new("code").unwrap()).unwrap();
 
@@ -257,8 +258,12 @@ mod tests {
 
     #[test]
     fn remove_tag () {
-        let mut task = Task::new("First", "").unwrap();
-        task.set_tags(vec![Tag::new("code").unwrap(), Tag::new("Rust").unwrap()]);
+        let mut task = Task::new("First").unwrap()
+                                .tags(&vec![
+                                    Tag::new("code").unwrap(), 
+                                    Tag::new("Rust").unwrap()]
+                                )
+                                .build();
 
         task.remove_tag(Tag::new("code").unwrap());
 
@@ -267,7 +272,7 @@ mod tests {
 
     #[test]
     fn remove_tag_from_empty () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.remove_tag(Tag::new("code").unwrap());
         assert_eq!(task.get_tags(), &vec![]);
     }
@@ -275,14 +280,14 @@ mod tests {
     // priority
     #[test]
     fn set_priority () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_priority(Priority::Yellow);
         assert_eq!(task.get_priority(), &Priority::Yellow);
     }
 
     #[test]
     fn down_and_up_priority () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_priority(Priority::Yellow);
 
         task.down_priority();
@@ -294,37 +299,40 @@ mod tests {
 
     #[test]
     fn update_time () {
-        let mut task = Task::new("First", "").unwrap();
+        let mut task = Task::new("First").unwrap().build();
         task.set_priority(Priority::Red);
         assert_ne!(task.get_updated_at(), task.get_created_at());
     }
 
     #[test]
     fn deadline_has_not_for_init () {
-        let task = Task::new("First", "").unwrap();
+        let task = Task::new("First").unwrap().build();
         assert!(!task.has_deadline());
     }
 
     #[test]
     fn deadline_has_deadline () {
-        let mut task = Task::new("First", "").unwrap();
-        task.set_deadline(Utc::now().checked_add_days(Days::new(2)).unwrap());
+        let mut task = Task::new("First").unwrap()
+                                .deadline(Utc::now().checked_add_days(Days::new(2)).unwrap())
+                                .build();
 
         assert!(task.has_deadline());
     }
 
     #[test]
     fn deadline_set_for_today () {
-        let mut task = Task::new("First", "").unwrap();
-        task.set_deadline(Utc::now().checked_add_signed(Duration::hours(2)).unwrap());
+        let mut task = Task::new("First").unwrap()
+                                .deadline(Utc::now().checked_add_signed(Duration::hours(2)).unwrap())
+                                .build();
 
         assert!(task.is_for_today());
     }
 
     #[test]
     fn deadline_set_for_not_today () {
-        let mut task = Task::new("First", "").unwrap();
-        task.set_deadline(Utc::now().checked_add_days(Days::new(2)).unwrap());
+        let mut task = Task::new("First").unwrap()
+                                .deadline(Utc::now().checked_add_days(Days::new(2)).unwrap())
+                                .build();
 
         assert!(! task.is_for_today());
     }

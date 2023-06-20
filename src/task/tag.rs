@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use std::cmp::PartialEq;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tag {
     #[allow(unused)]
     id: Uuid,
