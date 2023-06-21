@@ -30,14 +30,12 @@ impl TodoList {
         &self.tasks
     }
 
-    pub fn new_task (&mut self, title: &str, description: &str) -> Result<(), &str> {
-        for item in self.tasks.iter() {
-            if item.get_title() == title {
-                return Err("A task with same title is already exists");
-            }
+    pub fn add_task(&mut self, task: Task) -> Result<(), &str> {
+        if ! self.tasks.contains(&task) {
+            return Err("THe task is not exists");
         }
 
-        self.tasks.push(Task::new(title, description)?);
+        self.tasks.push(task);
 
         Ok(())
     }

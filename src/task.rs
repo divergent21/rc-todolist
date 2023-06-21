@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn deadline_has_deadline () {
-        let mut task = Task::new("First").unwrap()
+        let task = Task::new("First").unwrap()
                                 .deadline(Utc::now().checked_add_days(Days::new(2)).unwrap())
                                 .build();
 
@@ -321,7 +321,7 @@ mod tests {
 
     #[test]
     fn deadline_set_for_today () {
-        let mut task = Task::new("First").unwrap()
+        let task = Task::new("First").unwrap()
                                 .deadline(Utc::now().checked_add_signed(Duration::hours(2)).unwrap())
                                 .build();
 
@@ -330,7 +330,7 @@ mod tests {
 
     #[test]
     fn deadline_set_for_not_today () {
-        let mut task = Task::new("First").unwrap()
+        let task = Task::new("First").unwrap()
                                 .deadline(Utc::now().checked_add_days(Days::new(2)).unwrap())
                                 .build();
 
