@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use std::cmp::{PartialEq, Eq};
-use std::sync::RwLock;
+use std::sync::OnceLock;
 
 #[derive(Clone, Eq, Debug)]
 pub struct Category {
@@ -13,7 +13,7 @@ pub struct Category {
     title: String,
 }
 
-static DEFAULT: RwLock<Option<Category>> = RwLock::new(None);
+static DEFAULT: OnceLock<Category> = OnceLock::new();
 
 impl Category {
     pub fn new (title: &str) -> Result<Self, &'static str> {
@@ -60,14 +60,10 @@ impl std::fmt::Display for Category {
 
 impl Default for Category {
     fn default() -> Self {
-        if DEFAULT.read().unwrap().is_none() {
-            DEFAULT.write().unwrap().replace(Self {
-                id: Uuid::new_v4(),
-                title: String::from("Default")
-            });
-        }
-
-        DEFAULT.read().unwrap().as_ref().unwrap().clone()
+        DEFAULT.get_or_init(|| Self {
+            id: Uuid::new_v4(),
+            title: String::from("Default")
+        }).clone()
     }
 }
 
