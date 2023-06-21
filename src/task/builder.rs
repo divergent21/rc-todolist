@@ -1,46 +1,46 @@
 use super::{TaskStatus, Category, Priority, Tag, Task, DateTime, Utc, Uuid};
 
 pub struct TaskBuilder {
-    title: String,
-    description: Option<String>,
+    pub(super) title: String,
+    pub(super) description: Option<String>,
 
-    status: Option<TaskStatus>,
+    pub(super) status: Option<TaskStatus>,
 
-    category: Option<Category>,
-    tags: Option<Vec<Tag>>,
+    pub(super) category: Option<Category>,
+    pub(super) tags: Option<Vec<Tag>>,
 
-    priority: Option<Priority>,
+    pub(super) priority: Option<Priority>,
 
-    deadline: Option<DateTime<Utc>>
+    pub(super) deadline: Option<DateTime<Utc>>
 }
 
 impl TaskBuilder {
-    pub fn description(&mut self, description: &str) -> &mut Self {
+    pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
         self
     }
 
-    pub fn status(&mut self, status: TaskStatus) -> &mut Self {
+    pub fn status(mut self, status: TaskStatus) -> Self {
         self.status = Some(status);
         self
     }
 
-    pub fn category(&mut self, category: Category) -> &mut Self {
+    pub fn category(mut self, category: Category) -> Self {
         self.category = Some(category);
         self
     }
 
-    pub fn tags(&mut self, tags: &[Tag]) -> &mut Self {
+    pub fn tags(mut self, tags: &[Tag]) -> Self {
         self.tags = Some(tags.to_vec());
         self
     }
 
-    pub fn priority(&mut self, priority: Priority) -> &mut Self {
+    pub fn priority(mut self, priority: Priority) -> Self {
         self.priority = Some(priority);
         self
     }
 
-    pub fn deadline(&mut self, deadline: DateTime<Utc>) -> &mut Self {
+    pub fn deadline(mut self, deadline: DateTime<Utc>) -> Self {
         self.deadline = Some(deadline);
         self
     }
